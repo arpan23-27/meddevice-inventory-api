@@ -10,10 +10,16 @@ import (
 func main() {
 	cfg := LoadConfig()
 
-	var repo DeviceRepository = NewMemoryRepo() // Phase D swaps this to Postgres
-	var cache Cache = NoopCache{}               // Phase E swaps this to Redis
-	h := NewDeviceHandler(repo, cache)
+	pool, err := NewPostgresPool(cfg.PostgresURL)
+	if err != nil {
+		log.Fatalf("postgres: %v", err)
+	}
+	defer pool.Close()
 
+	var repo DeviceRepository = NewPostgresRepo(pool) // was: NewMemoryRepo()
+	var cache Cache = NoopCache{}
+	h := NewDeviceHandler(repo, cache)
+	// ... rest of main unchanged (router, routes, ListenAndServe)
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
