@@ -8,11 +8,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-	"context"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -41,7 +36,6 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	r.Get("/health", h.Health)
-
 	r.Route("/devices", func(r chi.Router) {
 		r.Post("/", h.Create)
 		r.Get("/", h.List)
@@ -50,14 +44,9 @@ func main() {
 		r.Delete("/{id}", h.Delete)
 	})
 
-	srv := &http.Server{
-		Addr:    ":" + cfg.Port,
-		Handler: r,
-	}
-
+	srv := &http.Server{Addr: ":" + cfg.Port, Handler: r}
 	go func() {
 		log.Printf("listening on %s", srv.Addr)
-
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
 		}
@@ -65,17 +54,12 @@ func main() {
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
-
 	<-stop
-
-	log.Println("shutting down server...")
-
+	log.Println("shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Printf("shutdown error: %v", err)
 	}
-
 	log.Println("server stopped")
 }
