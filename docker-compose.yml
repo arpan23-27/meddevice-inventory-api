@@ -20,5 +20,19 @@ services:
     ports:
       - "6379:6379"
 
+  api:
+    build: .
+    environment:
+      PORT: "8080"
+      POSTGRES_URL: "postgres://postgres:postgres@postgres:5432/meddevices?sslmode=disable"
+      REDIS_URL: "redis:6379"
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
 volumes:
   pgdata:
