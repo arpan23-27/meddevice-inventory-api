@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
+
 func main() {
 	cfg := LoadConfig()
 
@@ -16,10 +17,17 @@ func main() {
 	}
 	defer pool.Close()
 
-	var repo DeviceRepository = NewPostgresRepo(pool) // was: NewMemoryRepo()
-	var cache Cache = NoopCache{}
+	
+	rdb := NewRedisClient(cfg.RedisURL)
+	defer rdb.Close()
+
+	var repo DeviceRepository = NewPostgresRepo(pool)
+
+	
+	var cache Cache = NewRedisCache(rdb)
+
 	h := NewDeviceHandler(repo, cache)
-	// ... rest of main unchanged (router, routes, ListenAndServe)
+
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
